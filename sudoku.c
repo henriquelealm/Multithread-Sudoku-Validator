@@ -17,7 +17,8 @@ typedef struct
     int **sudoku;
     int linhaSubgrid;
     int colunaSubgrid;
-    int tam;
+    int nLinhas;
+    int nColunas;
     
 } subgrid;
 
@@ -26,11 +27,11 @@ int erro=0;
 
 void ordenar(int arr[], int n);
 void *verificaLinha(void *ptr);
-void *verificaGrid(void *ptr);
+void *verificaSubgrid(void *ptr);
 void *verificaColuna(void *ptr);
+int min(int a, int b);
 
 int main(int argc, char *argv[]) {
-
     if (argc != 2) {
         fprintf(stderr, "Invalid number of parameters");
         exit(EXIT_FAILURE);
@@ -81,22 +82,31 @@ int main(int argc, char *argv[]) {
 
     pthread_t threads_subgrids[sub_linhas*sub_colunas];
     subgrid sg[sub_linhas*sub_colunas];
-    
-    for (int i = 0; i < sub_linhas*sub_colunas; i++) {
 
-        sg[i].sudoku = matriz;
-        sg[i].linhaSubgrid = (i/sub_linhas)*sub_linhas;
-        sg[i].colunaSubgrid = (i%sub_colunas)*sub_colunas;
-        sg[i].tam = sub_linhas;
+    int cont = 0;
+    for (int i = 0; i < linhas; i++) {
+        for (int j = 0; j < linhas; j++) {
+            if (i % sub_linhas == 0 && j % sub_colunas == 0) {
+                sg[cont].sudoku = matriz;
+                sg[cont].linhaSubgrid = i;
+                sg[cont].colunaSubgrid = j;
+                sg[cont].nLinhas = sub_linhas;
+                sg[cont].nColunas = sub_colunas;
 
-        int tgrid = pthread_create(&threads_subgrids[i], NULL, verificaGrid, (void *)&sg[i]);
-        if (tgrid) {
-            printf("Error - pthread_create() return code: %d\n", tgrid);
-            exit(EXIT_FAILURE);
+                int tsubgrid = pthread_create(&threads_subgrids[cont], NULL, verificaSubgrid, (void *)&sg[cont]);
+
+                if (tsubgrid) {
+                    printf("Error - pthread_create() return code: %d\n", tsubgrid);
+                    exit(EXIT_FAILURE);
+                }
+                cont++;
+                pthread_join(threads_subgrids[cont-1], NULL);
+            }
         }
     }
 
-    for (int i = 0; i < sub_linhas*sub_colunas; i++) {
+
+    for (int i = 0; i < sub_linhas * sub_colunas; i++) {
         pthread_join(threads_subgrids[i], NULL);
     }
 
@@ -106,6 +116,9 @@ int main(int argc, char *argv[]) {
 
     if(!erro)
         printf("certinho papai\n");
+
+    free(matriz);
+    pthread_exit(NULL);
     return 0;
 
 }
@@ -129,6 +142,7 @@ void *verificaLinha(void *ptr) {
             break;
         }
     }
+    return NULL;
 }
 
 void *verificaColuna(void *ptr) {
@@ -150,33 +164,41 @@ void *verificaColuna(void *ptr) {
             break;
         }
     }
+    return NULL;
 }
 
-void *verificaGrid(void *ptr){
-
+void *verificaSubgrid(void *ptr) {
     subgrid *sg;
     sg = (subgrid *) ptr;
-    int listaV[sg->tam];
-    int listaIndex=0;
+    int listaVerificadora[sg->nLinhas * sg->nColunas];
 
-    for(int i = sg->linhaSubgrid; i < sg->linhaSubgrid + sg->tam; i++){
-        for(int j = sg->colunaSubgrid; j < sg->colunaSubgrid + sg->tam; j++){
-            listaV[listaIndex++] = sg->sudoku[i][j];
+    int cont = 0;
+    int N = sg->nLinhas * sg->nColunas; 
+    for (int i = sg->linhaSubgrid; i < sg->linhaSubgrid + sg->nLinhas; i++) {
+        for (int j = sg->colunaSubgrid; j < sg->colunaSubgrid + sg->nColunas; j++) {
+            if (i < 0 || i >= N || j < 0 || j >= N) continue; 
+            listaVerificadora[cont] = sg->sudoku[i][j];
+            cont++;
         }
-
     }
 
-    ordenar(listaV, sg->tam*sg->tam);
+    ordenar(listaVerificadora, sg->nLinhas * sg->nColunas);
 
-    for(int i = 0; i < sg->tam*sg->tam; i++){
-        if(listaV[i] != i+1){
+    for(int i = 0; i < sg->nLinhas * sg->nColunas; i++){
+        if(listaVerificadora[i] != i+1){
             erro = 1;
-            printf("deu erro no subgrid: %dx%d\n", sg->linhaSubgrid/sg->tam, sg->colunaSubgrid/sg->tam);
+                        printf("deu erro na subgrid: linha %d a %d, coluna %d a %d\n", sg->linhaSubgrid, sg->linhaSubgrid + sg->nLinhas - 1, sg->colunaSubgrid, sg->colunaSubgrid + sg->nColunas - 1);
             break;
         }
     }
 
+    return NULL;
 }
+
+
+
+
+
 
 
 
@@ -191,5 +213,8 @@ void ordenar(int *arr, int n) {
             }
         }
     }
-}
 
+}
+int min(int a, int b) {
+  return a < b ? a : b;
+}
