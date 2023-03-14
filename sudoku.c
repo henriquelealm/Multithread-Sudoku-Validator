@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 
     ptrPos = ftell(f);
     int countN = 0,num,countC = 0,countL=1;
-    char caracter;
+    char elemento;
     
     while (fscanf(f, "%d", &num) == 1) {
         if(num > linhas || num < 1){
@@ -82,11 +82,11 @@ int main(int argc, char *argv[]) {
 
     fseek(f, ptrPos, SEEK_SET);
 
-    while ((caracter = fgetc(f)) != EOF) {
-        if (caracter == ' ') {
+    while ((elemento = fgetc(f)) != EOF) {
+        if (elemento == ' ') {
             countC++;
         }
-        else if (caracter == '\n') {
+        else if (elemento == '\n') {
             countL++;
         }
     }
@@ -149,6 +149,7 @@ int main(int argc, char *argv[]) {
     subgrid sg[sub_linhas*sub_colunas];
 
     int cont = 0;
+
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < linhas; j++) {
 
@@ -171,13 +172,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
-    for (int i = 0; i < sub_linhas * sub_colunas; i++) {
-        pthread_join(threads_subgrids[i], NULL);
-    }
-
     for (int i = 0; i < linhas; i++) {
         pthread_join(threads[i], NULL);
+        pthread_join(threads_subgrids[i], NULL);
     }
 
     FILE *saida = fopen("sudoku_hlm.out", "w+");
