@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     }
 
     ptrPos = ftell(f);
-    int countN = 0,num,countC = 0;
+    int countN = 0,num,countC = 0,countL=1;
     char caracter;
     
     while (fscanf(f, "%d", &num) == 1) {
@@ -86,6 +86,9 @@ int main(int argc, char *argv[]) {
         if (caracter == ' ') {
             countC++;
         }
+        else if (caracter == '\n') {
+            countL++;
+        }
     }
 
     fseek(f, ptrPos, SEEK_SET);
@@ -94,10 +97,17 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "File out of format");
         exit(EXIT_FAILURE);
     }
+
     if(countN != linhas * colunas){
         fprintf(stderr, "File out of format");
         exit(EXIT_FAILURE);
     }
+
+    if(countL != linhas){
+        fprintf(stderr, "File out of format");
+        exit(EXIT_FAILURE);       
+    }
+
 
     int **matriz = malloc(linhas * sizeof(int *));
 
@@ -177,7 +187,7 @@ int main(int argc, char *argv[]) {
 
     else
         fprintf(saida,"FAIL");
-        
+
     free(matriz);
     pthread_exit(NULL);
     return 0;
