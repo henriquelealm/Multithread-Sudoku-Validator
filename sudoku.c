@@ -25,7 +25,7 @@ typedef struct
 
 int erro=0;
 
-void ordenar(int arr[], int n);
+void ordenar(int *arr, int n);
 void *verificaLinha(void *ptr);
 void *verificaSubgrid(void *ptr);
 void *verificaColuna(void *ptr);
@@ -38,19 +38,47 @@ int main(int argc, char *argv[]) {
     }
 
     FILE *f = fopen(argv[1], "r");
+
     if (f == NULL) {
         fprintf(stderr, "Error to read file");
         exit(EXIT_FAILURE);
     }
-
+    
     int linhas, colunas, sub_linhas, sub_colunas;
-    fscanf(f, "%dx%d\n%dx%d", &linhas, &colunas, &sub_linhas, &sub_colunas);
+    long int ptrPos;
+    
+    if (fscanf(f, "%dx%d\n%dx%d", &linhas, &colunas, &sub_linhas, &sub_colunas) != 4) {
+        printf("File out of format");
+        exit(EXIT_FAILURE);
+    }
+
+    if(linhas != colunas){
+        printf("File out of format");
+        exit(EXIT_FAILURE);
+    }
+
+    if(((sub_linhas*sub_colunas) != linhas) || ((sub_linhas*sub_colunas) != colunas)){
+        printf("File out of format");
+        exit(EXIT_FAILURE);
+    }
+
+    ptrPos = ftell(f);
+    int count = 0,num;
+    while (fscanf(f, "%d", &num) == 1) {
+        count++;
+    }
+
+    if(count != linhas * colunas){
+        printf("File out of format");
+        exit(EXIT_FAILURE);
+    }
+
+    fseek(f, ptrPos, SEEK_SET);
 
     int **matriz = malloc(linhas * sizeof(int *));
     for (int i = 0; i < linhas; i++) {
         matriz[i] = malloc(colunas * sizeof(int));
     }
-
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
             fscanf(f, "%d", &matriz[i][j]);
@@ -100,7 +128,6 @@ int main(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 }
                 cont++;
-                pthread_join(threads_subgrids[cont-1], NULL);
             }
         }
     }
@@ -113,10 +140,12 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < linhas; i++) {
         pthread_join(threads[i], NULL);
     }
+    FILE *saida = fopen("sudoku_hlm.out", "w+");
 
     if(!erro)
-        printf("certinho papai\n");
-
+        fprintf(saida,"SUCCESS");
+    else
+        fprintf(saida,"FAIL");
     free(matriz);
     pthread_exit(NULL);
     return 0;
@@ -138,7 +167,7 @@ void *verificaLinha(void *ptr) {
     for(int i = 0; i< ds->tam; i++){
         if(listaVerificadora[i] != i+1){
             erro = 1;
-            printf("deu erro na linha: %d\n",ds->linha);
+            //printf("deu erro na linha: %d\n",ds->linha);
             break;
         }
     }
@@ -160,7 +189,7 @@ void *verificaColuna(void *ptr) {
     for(int i = 0; i< ds->tam; i++){
         if(listaVerificadora[i] != i+1){
             erro = 1;
-            printf("deu erro na coluna: %d\n",ds->coluna);
+            //printf("deu erro na coluna: %d\n",ds->coluna);
             break;
         }
     }
@@ -176,7 +205,7 @@ void *verificaSubgrid(void *ptr) {
     int N = sg->nLinhas * sg->nColunas; 
     for (int i = sg->linhaSubgrid; i < sg->linhaSubgrid + sg->nLinhas; i++) {
         for (int j = sg->colunaSubgrid; j < sg->colunaSubgrid + sg->nColunas; j++) {
-            if (i < 0 || i >= N || j < 0 || j >= N) continue; 
+           // if (i < 0 || i >= N || j < 0 || j >= N) continue; 
             listaVerificadora[cont] = sg->sudoku[i][j];
             cont++;
         }
@@ -187,21 +216,13 @@ void *verificaSubgrid(void *ptr) {
     for(int i = 0; i < sg->nLinhas * sg->nColunas; i++){
         if(listaVerificadora[i] != i+1){
             erro = 1;
-                        printf("deu erro na subgrid: linha %d a %d, coluna %d a %d\n", sg->linhaSubgrid, sg->linhaSubgrid + sg->nLinhas - 1, sg->colunaSubgrid, sg->colunaSubgrid + sg->nColunas - 1);
+            //printf("deu erro na subgrid: linha %d a %d, coluna %d a %d\n", sg->linhaSubgrid, sg->linhaSubgrid + sg->nLinhas - 1, sg->colunaSubgrid, sg->colunaSubgrid + sg->nColunas - 1);
             break;
         }
     }
 
     return NULL;
 }
-
-
-
-
-
-
-
-
 void ordenar(int *arr, int n) {
     int i, j, temp;
     for (i = 0; i < n-1; i++) {
