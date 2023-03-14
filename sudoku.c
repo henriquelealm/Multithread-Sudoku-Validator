@@ -22,7 +22,6 @@ typedef struct
     
 } subgrid;
 
-
 int erro=0;
 
 void ordenar(int *arr, int n);
@@ -46,39 +45,66 @@ int main(int argc, char *argv[]) {
     
     int linhas, colunas, sub_linhas, sub_colunas;
     long int ptrPos;
-    
-    if (fscanf(f, "%dx%d\n%dx%d", &linhas, &colunas, &sub_linhas, &sub_colunas) != 4) {
-        printf("File out of format");
+    char l1[10],l2[10];
+
+    fgets(l1, 10, f);
+    fgets(l2, 10, f);
+
+    if ((strchr(l1, ' ') != NULL) || (strchr(l2, ' ') != NULL)){
+        fprintf(stderr, "File out of format");
         exit(EXIT_FAILURE);
     }
 
+    sscanf(l1, "%dx%d", &linhas, &colunas);
+    sscanf(l2, "%dx%d", &sub_linhas, &sub_colunas);
+
     if(linhas != colunas){
-        printf("File out of format");
+        fprintf(stderr, "File out of format");
         exit(EXIT_FAILURE);
     }
 
     if(((sub_linhas*sub_colunas) != linhas) || ((sub_linhas*sub_colunas) != colunas)){
-        printf("File out of format");
+        fprintf(stderr, "File out of format");
         exit(EXIT_FAILURE);
     }
 
     ptrPos = ftell(f);
-    int count = 0,num;
+    int countN = 0,num,countC = 0;
+    char caracter;
+    
     while (fscanf(f, "%d", &num) == 1) {
-        count++;
-    }
-
-    if(count != linhas * colunas){
-        printf("File out of format");
-        exit(EXIT_FAILURE);
+        if(num > linhas || num < 1){
+            fprintf(stderr, "File out of format");
+            exit(EXIT_FAILURE);
+        }
+        countN++;
     }
 
     fseek(f, ptrPos, SEEK_SET);
 
+    while ((caracter = fgetc(f)) != EOF) {
+        if (caracter == ' ') {
+            countC++;
+        }
+    }
+
+    fseek(f, ptrPos, SEEK_SET);
+
+    if(countC != (linhas*colunas)-linhas){
+        fprintf(stderr, "File out of format");
+        exit(EXIT_FAILURE);
+    }
+    if(countN != linhas * colunas){
+        fprintf(stderr, "File out of format");
+        exit(EXIT_FAILURE);
+    }
+
     int **matriz = malloc(linhas * sizeof(int *));
+
     for (int i = 0; i < linhas; i++) {
         matriz[i] = malloc(colunas * sizeof(int));
     }
+
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
             fscanf(f, "%d", &matriz[i][j]);
@@ -89,6 +115,7 @@ int main(int argc, char *argv[]) {
     datastruct ds[linhas];
     
     for (int i = 0; i < linhas; i++) {
+
         ds[i].tam = colunas;
         ds[i].sudoku = matriz;
         ds[i].linha = i;
@@ -114,7 +141,9 @@ int main(int argc, char *argv[]) {
     int cont = 0;
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < linhas; j++) {
+
             if (i % sub_linhas == 0 && j % sub_colunas == 0) {
+
                 sg[cont].sudoku = matriz;
                 sg[cont].linhaSubgrid = i;
                 sg[cont].colunaSubgrid = j;
@@ -140,12 +169,15 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < linhas; i++) {
         pthread_join(threads[i], NULL);
     }
+
     FILE *saida = fopen("sudoku_hlm.out", "w+");
 
     if(!erro)
         fprintf(saida,"SUCCESS");
+
     else
         fprintf(saida,"FAIL");
+        
     free(matriz);
     pthread_exit(NULL);
     return 0;
